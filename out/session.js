@@ -4,11 +4,17 @@ exports.Session = void 0;
 class Session {
     startTimeMS;
     startTimeFormated;
+    endTimeMS = null;
+    endTimeFormated = null;
     duration;
     constructor(startTimeMS, duration) {
         this.startTimeMS = startTimeMS;
         this.startTimeFormated = formatDate(startTimeMS);
         this.duration = duration;
+    }
+    setEndTime(endTimeMS) {
+        this.endTimeMS = endTimeMS;
+        this.endTimeFormated = formatDate(endTimeMS);
     }
 }
 exports.Session = Session;

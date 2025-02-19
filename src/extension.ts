@@ -14,13 +14,14 @@ let panel: vscode.WebviewPanel | undefined = undefined;
 
 
 let startTime = Date.now();
-let durationTxt = "";
 let paused = false;
-let timerInterval;
 let totalPausedTime = 0;
 let pauseStartTime = Date.now();
+let recoveredSession = false;
+
 
 function startTimer() {
+	//panel!.webview.postMessage({ command: 'startTimerResponse', paused: paused });
 	if (paused) {
 		paused = false;
 		totalPausedTime += Date.now() - pauseStartTime;
@@ -45,10 +46,57 @@ function getTime() {
 
 
 function sayHello(){
-	vscode.window.showInformationMessage("New coding session started! Happy coding! 🚀");
+	if (recoveredSession){
+		vscode.window.showInformationMessage("Welcome back! We've picked up your last session. Let’s go! 🚀");
+	}
+	else{
+		vscode.window.showInformationMessage("New coding session started! Happy coding! 🚀");
+	}
 }
 
 function saveSession() {
+    // Obtener la duración y crear la nueva sesión
+    let duration = getTime();
+    let newSession = new Session(startTime, duration);
+    console.log("Nueva sesión:", newSession);
+    
+    // Obtener el tiempo actual en milisegundos
+    const now = Date.now();
+    
+    // Buscar si ya existe una sesión para hoy dentro de un rango de 2 horas
+    let existingIndex = sessions.findIndex((session) => {
+        const sessionDate = new Date(session.startTimeMS);
+        const today = new Date();
+        
+        // Verificar si la diferencia es menor o igual a 2 horas (120 * 60 * 1000 ms)
+        const isWithin30Minutes = Math.abs(now - session.startTimeMS) <= 120 * 60 * 1000;
+        
+        return isWithin30Minutes;
+    });
+
+    if (existingIndex !== -1) {
+        // Si existe, se sobrescribe esa sesión
+        console.log("Se encontró una sesión reciente para hoy. Sobrescribiendo...");
+        sessions[existingIndex] = newSession;
+    } else {
+        // Si no existe, se agrega una nueva sesión
+        console.log("No se encontró sesión reciente para hoy. Creando una nueva sesión...");
+        sessions.push(newSession);
+    }
+
+    // Convertir el array de sesiones a JSON
+    let sessionsJson = JSON.stringify(sessions);
+    
+    // Guardar en el storage (por ejemplo, context.globalState o storage que estés usando)
+    if (storage) {
+        storage.update('sessions', sessionsJson);
+        console.log("Sesiones guardadas en storage.");
+    }
+}
+
+
+
+/*function saveSession() {
 	let duration = getTime();
 	let newSession = new Session(startTime, duration);
 	console.log("Nueva sesión:", newSession);
@@ -61,25 +109,52 @@ function saveSession() {
 		storage.update('sessions', sessionsJson);
 		console.log("Array de sesiones guardado en storage.");
 }
+} */
+
+function loadSession() {
+    console.log("Cargando sesiones...");
+    
+    if (storage) {
+        // Recuperar el JSON del storage
+        let sessionsJson = storage.get('sessions');
+
+        if (sessionsJson) {
+            try {
+                // Convertir el JSON de nuevo en un array de objetos
+                let sessionsArray = JSON.parse(sessionsJson as string);
+                
+                // Reconstituir los objetos Session con los datos recuperados
+                sessions = sessionsArray.map((sessionData: { startTimeMS: number, duration: string }) => {
+                    return new Session(sessionData.startTimeMS, sessionData.duration);
+                });
+
+				console.log("Sesiones recuperadas:", sessions);
+
+				// Verificar si hay una sesión reciente (menos de 2 horas)
+				const now = Date.now();
+				let recentSession = sessions.find(session => Math.abs(now - session.startTimeMS) <= 120 * 60 * 1000);
+	
+				if (recentSession) {
+					// Si hay una sesión reciente, restablecer el startTime con el de la sesión y recoveredSession a true
+					recoveredSession = true;
+					console.log("Hay una sesión reciente. Restableciendo el startTime...");
+					startTime = recentSession.startTimeMS;  // Restablecer el startTime con la sesión encontrada
+				} else {
+					console.log("No hay sesiones recientes.");
+				}
+
+                console.log("Sesiones recuperadas:", sessions);
+            } catch (error) {
+                console.error("Error al parsear las sesiones:", error);
+                sessions = []; // Si hay un error en el JSON, inicializamos con un arreglo vacío
+            }
+        } else {
+            console.log("No se encontraron sesiones guardadas.");
+            sessions = []; // Si no hay sesiones guardadas, inicializamos con un arreglo vacío
+        }
+    }
 }
 
-function loadSession(){
-	console.log("Cargando sesiones...");
-	if (storage) {
-		// Recuperar el JSON del storage
-		let sessionsJson = storage.get('sessions');
-		
-		// Convertir el JSON de nuevo en un array de objetos
-		let sessionsArray = JSON.parse(sessionsJson as string);
-		
-		// Reconstituir los objetos Session con los datos recuperados
-		sessions = sessionsArray.map((sessionData: { startTimeMS: number, duration: string }) => {
-			return new Session(sessionData.startTimeMS, sessionData.duration);
-		});
-	
-		console.log("Sesiones recuperadas:", sessions);
-	}
-}
 
 function clearSessions() {
 	sessions = [];
@@ -92,9 +167,6 @@ function clearSessions() {
 
 
 export function activate(context: vscode.ExtensionContext) {
-	sayHello();
-	startTimer();
-
 
 	storage = context.workspaceState;
 
@@ -147,18 +219,25 @@ export function activate(context: vscode.ExtensionContext) {
 			
 		}
 	});
+	startTimer();
 	loadSession();
+	sayHello();
+
+	const saveListener = vscode.workspace.onDidSaveTextDocument((document) => { // cuando se guarda un archivo, guardamos la sesión
+		saveSession();
+		console.log("Guardando sesion al guardar archivo...");
+	});
+	context.subscriptions.push(saveListener);
+
 	context.subscriptions.push(showPanelDisposable);
 }
 
-export function deactivate() {
-	let duration = getTime();
-	saveSession();
+export function deactivate(){
 	if (panel) {
 		panel.dispose();
 	}
 }
-
+	
 function getWebviewContent(context: vscode.ExtensionContext) {
 	const gifUri = panel!.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'images', 'Chilling_guy_coding.gif')));
 	// HTML para el Webview

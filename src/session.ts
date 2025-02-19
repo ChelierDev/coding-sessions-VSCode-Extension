@@ -1,6 +1,8 @@
 export class Session {
     startTimeMS: number;
     startTimeFormated: string;
+    endTimeMS: number | null = null;
+    endTimeFormated: string | null = null;
     duration: string;
 
     constructor(startTimeMS: number,duration: string) {
@@ -10,6 +12,10 @@ export class Session {
 
     }
 
+    setEndTime(endTimeMS: number) {
+        this.endTimeMS = endTimeMS;
+        this.endTimeFormated = formatDate(endTimeMS);
+    }
     
 }
 
