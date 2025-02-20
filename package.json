@@ -1,6 +1,6 @@
 {
-  "name": "coding-session-timer",
-  "displayName": "Coding Session Timer",
+  "name": "coding-sessions",
+  "displayName": "Coding Sessions",
   "description": "An extension to track your work hours in VSCode. Just you, a warm cup of coffee, and a relaxed vibe while you code. Track your time effortlessly as you dive into your work, all while keeping things chill and productive.",
   "version": "0.0.1",
   "engines": {
@@ -15,7 +15,7 @@
     "commands": [
       {
         "command": "extension.showPanel",
-        "title": "Mostrar panel de sesión"
+        "title": "Coding Sessions : show Panel"
       }
     ]
   },

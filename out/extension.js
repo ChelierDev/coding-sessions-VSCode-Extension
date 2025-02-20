@@ -88,7 +88,6 @@ function saveSession() {
     const now = Date.now();
     let durationMS = Date.now() - startTime - totalPausedTime;
     let newSession = new session_1.Session(startTime, durationMS);
-    console.log("Nueva sesión:", newSession);
     // Buscar si ya existe una sesión para hoy dentro de un rango de 2 horas
     let existingIndex = sessions.findIndex((session) => {
         // Verificar si la diferencia es menor o igual a 2 horas (120 * 60 * 1000 ms)
@@ -97,14 +96,10 @@ function saveSession() {
     });
     if (existingIndex !== -1) {
         // Si existe, se sobrescribe esa sesión
-        //console.log("Se encontró una sesión reciente para hoy. Sobrescribiendo...");
-        // sessions[existingIndex] = newSession;
-        console.log("No se encontró sesión reciente para hoy. Creando una nueva sesión...");
-        sessions.push(newSession);
+        sessions[existingIndex] = newSession;
     }
     else {
         // Si no existe, se agrega una nueva sesión
-        console.log("No se encontró sesión reciente para hoy. Creando una nueva sesión...");
         sessions.push(newSession);
     }
     // Convertir el array de sesiones a JSON
@@ -112,11 +107,9 @@ function saveSession() {
     // Guardar en el storage (por ejemplo, context.globalState o storage que estés usando)
     if (storage) {
         storage.update('sessions', sessionsJson);
-        console.log("Sesiones guardadas en storage.");
     }
 }
 function loadSession() {
-    console.log("Cargando sesiones...");
     if (storage) {
         // Recuperar el JSON del storage
         let sessionsJson = storage.get('sessions');
@@ -128,29 +121,21 @@ function loadSession() {
                 sessions = sessionsArray.map((sessionData) => {
                     return new session_1.Session(sessionData.startTimeMS, sessionData.durationMS);
                 });
-                console.log("Sesiones recuperadas:", sessions);
                 // Verificar si hay una sesión reciente (menos de 2 horas)
                 const now = Date.now();
                 let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000);
                 if (recentSession) {
                     // Si hay una sesión reciente, restablecer el startTime con el de la sesión y recoveredSession a true
                     recoveredSession = true;
-                    console.log("Hay una sesión reciente. Restableciendo el startTime...");
                     startTime = recentSession.startTimeMS; // Restablecer el startTime con la sesión encontrada
                     totalPausedTime += now - (recentSession.startTimeMS + recentSession.durationMS); // Calcular el tiempo pausado
                 }
-                else {
-                    console.log("No hay sesiones recientes.");
-                }
-                console.log("Sesiones recuperadas:", sessions);
             }
             catch (error) {
-                console.error("Error al parsear las sesiones:", error);
                 sessions = []; // Si hay un error en el JSON, inicializamos con un arreglo vacío
             }
         }
         else {
-            console.log("No se encontraron sesiones guardadas.");
             sessions = []; // Si no hay sesiones guardadas, inicializamos con un arreglo vacío
         }
     }
@@ -193,7 +178,6 @@ function clearSessions() {
     sessions = [];
     if (storage) {
         storage.update('sessions', ''); // O puedes usar null en lugar de ''
-        console.log("Sesiones borradas del storage.");
     }
 }
 function activate(context) {
@@ -201,13 +185,11 @@ function activate(context) {
     // Comando para abrir el panel lateral
     const showPanelDisposable = vscode.commands.registerCommand('extension.showPanel', () => {
         if (!panel) {
-            console.log("Iniciando el registro del Webview...");
             // Crear el panel
             panel = vscode.window.createWebviewPanel('codingSessionPanel', 'Coding Session Timer', vscode.ViewColumn.One, // Esto lo pone en la columna 1 (la principal)
             {
                 enableScripts: true // Habilita la ejecución de scripts dentro del Webview
             });
-            console.log("Webview registrado correctamente.");
             panel.webview.html = getWebviewContent(context); // Define el contenido HTML del panel
             // Escuchar los mensajes enviados desde el webview
             panel.webview.onDidReceiveMessage(message => {
@@ -249,7 +231,6 @@ function activate(context) {
     sayHello();
     const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
         saveSession();
-        console.log("Guardando sesion al guardar archivo...");
     });
     context.subscriptions.push(saveListener);
     context.subscriptions.push(showPanelDisposable);
@@ -385,7 +366,6 @@ function getWebviewContent(context) {
 					window.addEventListener('message', event => {
 						const message = event.data; // El mensaje enviado desde el webview
 						if (message.command === 'getSessionsResponse') {
-							console.log(message.sessions);
 
 							const table = document.getElementById("sessionsTable");
 							while (table.rows.length > 1) {
