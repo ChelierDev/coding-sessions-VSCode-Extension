@@ -195,8 +195,14 @@ export function activate(context: vscode.ExtensionContext) {
                 },
                 undefined,
                 context.subscriptions
+				
             );
 			
+			panel.onDidDispose(() => {
+				panel = undefined;
+			}, null, context.subscriptions);
+
+
 		}
 	});
 	startTimer();
@@ -207,6 +213,7 @@ export function activate(context: vscode.ExtensionContext) {
 		saveSession();
 		console.log("Guardando sesion al guardar archivo...");
 	});
+	
 	context.subscriptions.push(saveListener);
 
 	context.subscriptions.push(showPanelDisposable);

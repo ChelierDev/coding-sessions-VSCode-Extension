@@ -186,6 +186,9 @@ function activate(context) {
                         return;
                 }
             }, undefined, context.subscriptions);
+            panel.onDidDispose(() => {
+                panel = undefined;
+            }, null, context.subscriptions);
         }
     });
     startTimer();
