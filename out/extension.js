@@ -63,13 +63,12 @@ function getTime() {
     let hours = Math.floor(elapsedSeconds / 3600); // Calculamos las horas
     let minutes = Math.floor((elapsedSeconds % 3600) / 60); // Calculamos los minutos
     let seconds = elapsedSeconds % 60; // Calculamos los segundos restantes
-    let duration = hours + 'h ' + minutes + 'm ' + seconds + 's';
-    //console.log("Duración de la sesión:", duration);
+    let duration = hours + 'h ' + minutes + 'm ' + seconds + 's'; // Formateamos la duración
     return duration;
 }
 function sayHello() {
     if (recoveredSession) {
-        vscode.window.showInformationMessage("Welcome back! We've picked up your last session. Let’s go! 🚀");
+        vscode.window.showInformationMessage("Welcome back! We've picked up your last session. Let's go! 🚀");
     }
     else {
         vscode.window.showInformationMessage("New coding session started! Happy coding! 🚀");
@@ -78,17 +77,15 @@ function sayHello() {
 function saveSession() {
     // Obtener la duración y crear la nueva sesión
     let duration = getTime();
-    let newSession = new session_1.Session(startTime, duration);
-    console.log("Nueva sesión:", newSession);
-    // Obtener el tiempo actual en milisegundos
     const now = Date.now();
+    let durationMS = Date.now() - startTime - totalPausedTime;
+    let newSession = new session_1.Session(startTime, durationMS);
+    console.log("Nueva sesión:", newSession);
     // Buscar si ya existe una sesión para hoy dentro de un rango de 2 horas
     let existingIndex = sessions.findIndex((session) => {
-        const sessionDate = new Date(session.startTimeMS);
-        const today = new Date();
         // Verificar si la diferencia es menor o igual a 2 horas (120 * 60 * 1000 ms)
-        const isWithin30Minutes = Math.abs(now - session.startTimeMS) <= 120 * 60 * 1000;
-        return isWithin30Minutes;
+        let timeSession = session.startTimeMS + session.durationMS;
+        return Math.abs(now - timeSession) <= 120 * 60 * 1000;
     });
     if (existingIndex !== -1) {
         // Si existe, se sobrescribe esa sesión
@@ -108,20 +105,6 @@ function saveSession() {
         console.log("Sesiones guardadas en storage.");
     }
 }
-/*function saveSession() {
-    let duration = getTime();
-    let newSession = new Session(startTime, duration);
-    console.log("Nueva sesión:", newSession);
-    sessions.push(newSession);
-    // Convertir el array de objetos Session a una cadena JSON
-    let sessionsJson = JSON.stringify(sessions);
-
-    // Guardar en el storage
-    if (storage) {
-        storage.update('sessions', sessionsJson);
-        console.log("Array de sesiones guardado en storage.");
-}
-} */
 function loadSession() {
     console.log("Cargando sesiones...");
     if (storage) {
@@ -133,17 +116,18 @@ function loadSession() {
                 let sessionsArray = JSON.parse(sessionsJson);
                 // Reconstituir los objetos Session con los datos recuperados
                 sessions = sessionsArray.map((sessionData) => {
-                    return new session_1.Session(sessionData.startTimeMS, sessionData.duration);
+                    return new session_1.Session(sessionData.startTimeMS, sessionData.durationMS);
                 });
                 console.log("Sesiones recuperadas:", sessions);
                 // Verificar si hay una sesión reciente (menos de 2 horas)
                 const now = Date.now();
-                let recentSession = sessions.find(session => Math.abs(now - session.startTimeMS) <= 120 * 60 * 1000);
+                let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000);
                 if (recentSession) {
                     // Si hay una sesión reciente, restablecer el startTime con el de la sesión y recoveredSession a true
                     recoveredSession = true;
                     console.log("Hay una sesión reciente. Restableciendo el startTime...");
                     startTime = recentSession.startTimeMS; // Restablecer el startTime con la sesión encontrada
+                    totalPausedTime += now - (recentSession.startTimeMS + recentSession.durationMS); // Calcular el tiempo pausado
                 }
                 else {
                     console.log("No hay sesiones recientes.");

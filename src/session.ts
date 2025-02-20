@@ -1,22 +1,19 @@
 export class Session {
     startTimeMS: number;
     startTimeFormated: string;
-    endTimeMS: number | null = null;
-    endTimeFormated: string | null = null;
-    duration: string;
 
-    constructor(startTimeMS: number,duration: string) {
+    durationMS: number;
+    durationFormated: string;
+
+    constructor(startTimeMS: number, durationMS: number) {
         this.startTimeMS = startTimeMS;
         this.startTimeFormated = formatDate(startTimeMS);
-        this.duration = duration;
+
+        this.durationMS = durationMS;
+        this.durationFormated = formatTime(durationMS);
 
     }
 
-    setEndTime(endTimeMS: number) {
-        this.endTimeMS = endTimeMS;
-        this.endTimeFormated = formatDate(endTimeMS);
-    }
-    
 }
 
 function formatDate(timestamp: number) {
@@ -28,4 +25,13 @@ function formatDate(timestamp: number) {
     const minutes = String(date.getMinutes()).padStart(2, '0'); // Obtiene los minutos, asegurando que tenga 2 dígitos
 
     return `${day}-${month}-${year} ${hours}:${minutes}`;
+}
+
+function formatTime(duration : number){
+    let elapsedSeconds = Math.floor(duration / 1000); // Convertimos a segundos
+    let hours = Math.floor(elapsedSeconds / 3600); // Calculamos las horas
+    let minutes = Math.floor((elapsedSeconds % 3600) / 60); // Calculamos los minutos
+    let seconds = elapsedSeconds % 60; // Calculamos los segundos restantes
+    return (hours + 'h '+  minutes + 'm ' + seconds + 's'); // Formateamos la duración
+
 }
