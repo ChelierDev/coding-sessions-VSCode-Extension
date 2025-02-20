@@ -41,5 +41,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Nachelier/coding-sessions-VSCode-Extension"
-  }
+  },
+  "bugs": {
+  "url": "https://github.com/Nachelier/coding-sessions-VSCode-Extension/issues"
+}
+
 }

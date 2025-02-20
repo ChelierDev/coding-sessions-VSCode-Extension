@@ -11,3 +11,10 @@ This extension allows you to track and export your coding sessions in **Visual S
 ## Commands
 
 - **Coding Sessions: Show Panel**: Opens the session tracking panel to view the active and past sessions.
+
+## Contact
+
+If you encounter any issues or have suggestions for improvement, feel free to reach out:
+
+- **Email**: [i.manjonbar@gmail.com](mailto:i.manjonbar@gmail.com)
+- **GitHub Issues**: [Report an issue](https://github.com/Nachelier/coding-sessions-VSCode-Extension/issues)
