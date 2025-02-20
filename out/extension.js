@@ -38,6 +38,7 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const session_1 = require("./session");
+const fs = __importStar(require("fs"));
 let storage;
 let sessions = [];
 let panel = undefined;
@@ -46,6 +47,13 @@ let paused = false;
 let totalPausedTime = 0;
 let pauseStartTime = Date.now();
 let recoveredSession = false;
+function testAlotSave() {
+    for (let i = 0; i < 100; i++) {
+        let date = new Date(2010, 1, 1).getTime();
+        date += i * 1000 * 60 * 60 * 24;
+        sessions.push(new session_1.Session(date, 1000));
+    }
+}
 function startTimer() {
     //panel!.webview.postMessage({ command: 'startTimerResponse', paused: paused });
     if (paused) {
@@ -89,8 +97,10 @@ function saveSession() {
     });
     if (existingIndex !== -1) {
         // Si existe, se sobrescribe esa sesión
-        console.log("Se encontró una sesión reciente para hoy. Sobrescribiendo...");
-        sessions[existingIndex] = newSession;
+        //console.log("Se encontró una sesión reciente para hoy. Sobrescribiendo...");
+        // sessions[existingIndex] = newSession;
+        console.log("No se encontró sesión reciente para hoy. Creando una nueva sesión...");
+        sessions.push(newSession);
     }
     else {
         // Si no existe, se agrega una nueva sesión
@@ -145,8 +155,39 @@ function loadSession() {
         }
     }
 }
+function exportToCsv() {
+    if (sessions.length === 0) {
+        vscode.window.showInformationMessage("There are no sessions to export.");
+        return;
+    }
+    const os = require('os');
+    const documentsPath = path.join(os.homedir(), 'Documents');
+    // Crear el encabezado del archivo CSV
+    const header = 'Start Time,Duration\n';
+    const rows = sessions.map(session => {
+        const startTimeFormatted = new Date(session.startTimeMS).toLocaleString();
+        const durationFormatted = `${Math.floor(session.durationMS / 3600000)}h ${Math.floor((session.durationMS % 3600000) / 60000)}m`;
+        return `${startTimeFormatted},${durationFormatted}`;
+    }).join('\n');
+    const csvContent = header + rows;
+    vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(path.join(documentsPath || '', 'Coding_sessions_VSCode.csv')),
+        filters: { 'CSV Files': ['csv'] }
+    }).then(fileUri => {
+        if (fileUri) {
+            fs.writeFile(fileUri.fsPath, csvContent, (err) => {
+                if (err) {
+                    vscode.window.showErrorMessage("Error saving the CSV file.");
+                    return;
+                }
+                vscode.window.showInformationMessage("Sessions successfully exported to CSV! Saved at: " + fileUri.fsPath);
+            });
+        }
+    });
+}
+// Función para pasar las sesiones a la vista del webview de más reciente a más antigua
 function getSessions() {
-    panel.webview.postMessage({ command: 'getSessionsResponse', sessions: sessions });
+    panel.webview.postMessage({ command: 'getSessionsResponse', sessions: sessions.slice().reverse() });
 }
 function clearSessions() {
     sessions = [];
@@ -186,6 +227,12 @@ function activate(context) {
                         return;
                     case 'getSessions':
                         getSessions();
+                        return;
+                    case 'saveSessionMasive':
+                        testAlotSave();
+                        return;
+                    case 'exportCsv':
+                        exportToCsv();
                         return;
                     case 'clearSessions':
                         clearSessions();
@@ -244,13 +291,17 @@ function getWebviewContent(context) {
 						font-weight: bold;
 						color: white;
 					}
-						button {
+					button {
 						background-color: #2685a5;
 						color: white;
 						border: none;
 						border-radius: 5px;
 						cursor: pointer;
-						}
+					}
+					.debug {
+						display: none;
+					}
+
                 </style>
             </head>
             <body>
@@ -258,13 +309,24 @@ function getWebviewContent(context) {
 				<img src="${gifUri}" alt="Chilling guy coding" style="width:25%";>
 				<h2>💻 Enjoy coding! ☕</h2>
                 <p>Time in this session: <span id="time">0m</span></p>
-                <button id="startBtn" onclick="startTimer()">Pausar</button>
+                <button id="startBtn" onclick="startTimer()">Pause</button>
+				<button id="exportCsvBtn" onclick="exportToCsv()">Export to CSV</button>
+
+
+
+
+				<!-- Botones para guardar, cargar y limpiar las sesiones DEBUG ONLY -->
+				<button class="debug" onclick="testSave()">Guardar</button>
+				<button class="debug" onclick="testLoad()">Cargar</button>
+				<button class="debug" onclick="testClear()">Limpiar</button>
+				<button class="debug" onclick="showSessions()">Ver sesiones anteriores</button>
+
 				
-				<button onclick="testSave()">Guardar</button>
- 				<button onclick="showSessions()">Ver sesiones anteriores</button>
+				<!- Botón para guardar 1 millón de sesiones DEBUG ONLY -->
+				<button class="debug" onclick="testSaveAlot()">Save Session massive</button>
 
 				<div style="text-align:center">
-				<h2>Recent Sessions</h2>
+				<h2>Recent Sessions:</h2>
 				<table style="margin-top:30px" id="sessionsTable">
 						<tr>
 							<th>Start Time</th>
@@ -329,21 +391,39 @@ function getWebviewContent(context) {
 							while (table.rows.length > 1) {
 								table.deleteRow(1);
 							}
-
+							let count = 0;
 							for (const session of message.sessions) {
 								const row = table.insertRow();
 								const cell1 = row.insertCell(0);
 								const cell2 = row.insertCell(1);
 								cell1.textContent = session.startTimeFormated;
 								cell2.textContent = session.durationFormated;
+								if (count % 2 == 1) {
+									row.style.backgroundColor = "#3d3d3d";	
+								}
+								count++;
+								if (count >= 100) {
+									break;	
+								}
 							}
 
 						}
 
 					});
 				}
+
+				function testSaveAlot() {
+					vscode.postMessage({ command: 'saveSessionMasive'});
+				}
+
+
+				function exportToCsv() {
+					vscode.postMessage({ command: 'exportCsv' });
+				}
+
 				window.onload = function() {
 					updateTimer();
+					showSessions();
 					timerInterval = setInterval(updateTimer, 1000);
 				}			
                 </script>
