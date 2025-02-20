@@ -135,6 +135,9 @@ function loadSession() {
     }
 }
 
+function getSessions(){
+	panel!.webview.postMessage({ command: 'getSessionsResponse', sessions: sessions });
+}
 
 function clearSessions() {
 	sessions = [];
@@ -188,6 +191,10 @@ export function activate(context: vscode.ExtensionContext) {
                             loadSession();
                             return;
 
+						case 'getSessions':
+							getSessions();
+							return
+
 						case 'clearSessions':
 							clearSessions();
 							return
@@ -239,32 +246,59 @@ function getWebviewContent(context: vscode.ExtensionContext) {
                     body { font-family: Arial, sans-serif; text-align: center; padding: 10px; }
                     h1,h2 { color: #2685a5; }
                     button { padding: 10px; margin-top: 10px; }
+					table, th, td {
+						border: 1px solid black;
+						border-collapse: collapse;
+					}
+					table {
+						text-align: center;
+						width: 40%;
+						margin: auto;
+						table-layout: fixed;
+					}
+					th, td {
+						padding: 5px;
+					}
+					th {
+						background-color: #2685a5;
+						font-weight: bold;
+						color: white;
+					}
+						button {
+						background-color: #2685a5;
+						color: white;
+						border: none;
+						border-radius: 5px;
+						cursor: pointer;
+						}
                 </style>
             </head>
             <body>
                 <h1>Coding Timer</h1>
 				<img src="${gifUri}" alt="Chilling guy coding" style="width:25%";>
 				<h2>💻 Enjoy coding! ☕</h2>
-                <p>Tiempo en esta sesión: <span id="time">0m</span></p>
+                <p>Time in this session: <span id="time">0m</span></p>
                 <button id="startBtn" onclick="startTimer()">Pausar</button>
 				
 				<button onclick="testSave()">Guardar</button>
-                <button onclick="testLoad()">Cargar</button>
-				<button onclick="testClear()">Limpiar</button>
+ 				<button onclick="showSessions()">Ver sesiones anteriores</button>
 
-
+				<div style="text-align:center">
+				<h2>Recent Sessions</h2>
+				<table style="margin-top:30px" id="sessionsTable">
+						<tr>
+							<th>Start Time</th>
+							<th>Duration</th>
+						</tr>
+				</table>
+				</div>
 
 
                 <script>
 					const vscode = acquireVsCodeApi();
 
-                    let startTime = Date.now();
-					let durationTxt = "";
 					let paused = false;
-					let timerInterval;
-					let totalPausedTime = 0;
-					let pauseStartTime = Date.now();
-					
+
 
 					function updateTimer() {
 						vscode.postMessage({ command: 'getTime' });
@@ -301,6 +335,32 @@ function getWebviewContent(context: vscode.ExtensionContext) {
 
 				function testClear() {
 					vscode.postMessage({ command: 'clearSessions' });
+				}
+
+
+				function showSessions() {
+				vscode.postMessage({ command: 'getSessions' });
+					window.addEventListener('message', event => {
+						const message = event.data; // El mensaje enviado desde el webview
+						if (message.command === 'getSessionsResponse') {
+							console.log(message.sessions);
+
+							const table = document.getElementById("sessionsTable");
+							while (table.rows.length > 1) {
+								table.deleteRow(1);
+							}
+
+							for (const session of message.sessions) {
+								const row = table.insertRow();
+								const cell1 = row.insertCell(0);
+								const cell2 = row.insertCell(1);
+								cell1.textContent = session.startTimeFormated;
+								cell2.textContent = session.durationFormated;
+							}
+
+						}
+
+					});
 				}
 				window.onload = function() {
 					updateTimer();
