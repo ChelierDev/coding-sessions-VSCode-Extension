@@ -43,7 +43,7 @@ let storage;
 let sessions = [];
 let panel = undefined;
 let startTime = Date.now();
-let paused = false;
+let paused = true;
 let totalPausedTime = 0;
 let pauseStartTime = Date.now();
 let recoveredSession = false;

@@ -16,7 +16,7 @@ let panel: vscode.WebviewPanel | undefined = undefined;
 
 
 let startTime = Date.now();
-let paused = false;
+let paused = true;
 let totalPausedTime = 0;
 let pauseStartTime = Date.now();
 let recoveredSession = false;
