@@ -1,7 +1,7 @@
 {
   "name": "coding-sessions",
   "displayName": "Coding Sessions",
-  "description": "An extension to track your work hours in VSCode. Track your time effortlessly as you dive into your work, all while keeping things chill and productive.",
+  "description": "A simple extension to track your work hours in VSCode.",
   "version": "0.0.1",
   "publisher": "Chelier Software",
   "icon":"images/icon.jpeg",
