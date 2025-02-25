@@ -147,11 +147,12 @@ function exportToCsv() {
 	const documentsPath = path.join(os.homedir(), 'Documents');
 
 	// Crear el encabezado del archivo CSV
-	const header = 'Start Time,Duration\n';
+	const header = 'Project Name,Start Time,Duration\n';
 	const rows = sessions.map(session => {
+		const projectName = session.projectName;
 		const startTimeFormatted = new Date(session.startTimeMS).toLocaleString();
-		const durationFormatted = `${Math.floor(session.durationMS / 3600000)}h ${Math.floor((session.durationMS % 3600000) / 60000)}m`;
-		return `${startTimeFormatted},${durationFormatted}`;
+		const durationFormatted = `${Math.floor(session.durationMS / 3600000)}h ${Math.floor((session.durationMS % 3600000) / 60000)}m ${Math.floor((session.durationMS % 60000) / 1000)}s`;
+		return `${projectName},${startTimeFormatted},${durationFormatted}`;
 	}).join('\n');
 
 	const csvContent = header + rows;
