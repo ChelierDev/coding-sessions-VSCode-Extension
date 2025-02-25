@@ -7,12 +7,13 @@ import * as fs from 'fs';
 
 
 let storage: vscode.Memento;
+let projectName: string = '';
 
 let sessions: Session[] = [];
 
 let panel: vscode.WebviewPanel | undefined = undefined;
 
-
+const workspaceFolders = vscode.workspace.workspaceFolders;
 
 
 let startTime = Date.now();
@@ -25,7 +26,7 @@ function testAlotSave() {
 	for (let i = 0; i < 100; i++) {
 		let date = new Date(2010, 1, 1).getTime();
 		date += i * 1000 * 60 * 60 * 24;
-		sessions.push(new Session(date, 1000));
+		sessions.push(new Session(date, 1000,projectName));
 	}
 }
 
@@ -67,7 +68,7 @@ function saveSession() {
     let duration = getTime();
 	const now = Date.now();
 	let durationMS = Date.now() - startTime - totalPausedTime;
-    let newSession = new Session(startTime, durationMS);
+    let newSession = new Session(startTime, durationMS, projectName);
 
     
 
@@ -110,7 +111,7 @@ function loadSession() {
                 
                 // Reconstituir los objetos Session con los datos recuperados
                 sessions = sessionsArray.map((sessionData: { startTimeMS: number, durationMS: number }) => {
-                    return new Session(sessionData.startTimeMS,sessionData.durationMS);
+                    return new Session(sessionData.startTimeMS,sessionData.durationMS, projectName);
                 });
 
 				// Verificar si hay una sesión reciente (menos de 2 horas)
@@ -259,6 +260,12 @@ export function activate(context: vscode.ExtensionContext) {
 		saveSession();
 	});
 	
+	if (workspaceFolders) {
+		projectName = workspaceFolders[0].name;
+		console.log(`Nombre del proyecto: ${projectName}`);
+	}
+
+
 	context.subscriptions.push(saveListener);
 
 	context.subscriptions.push(showPanelDisposable);
@@ -340,6 +347,7 @@ function getWebviewContent(context: vscode.ExtensionContext) {
 				<h2>Recent Sessions:</h2>
 				<table style="margin-top:30px" id="sessionsTable">
 						<tr>
+							<th>Proyect Name</th>
 							<th>Start Time</th>
 							<th>Duration</th>
 						</tr>
@@ -406,8 +414,10 @@ function getWebviewContent(context: vscode.ExtensionContext) {
 								const row = table.insertRow();
 								const cell1 = row.insertCell(0);
 								const cell2 = row.insertCell(1);
-								cell1.textContent = session.startTimeFormated;
-								cell2.textContent = session.durationFormated;
+								const cell3 = row.insertCell(2);
+								cell1.textContent = session.proyectName;
+								cell2.textContent = session.startTimeFormated;
+								cell3.textContent = session.durationFormated;
 								if (count % 2 == 1) {
 									row.style.backgroundColor = "#3d3d3d";	
 								}

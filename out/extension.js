@@ -40,8 +40,10 @@ const path = __importStar(require("path"));
 const session_1 = require("./session");
 const fs = __importStar(require("fs"));
 let storage;
+let projectName = '';
 let sessions = [];
 let panel = undefined;
+const workspaceFolders = vscode.workspace.workspaceFolders;
 let startTime = Date.now();
 let paused = true;
 let totalPausedTime = 0;
@@ -51,7 +53,7 @@ function testAlotSave() {
     for (let i = 0; i < 100; i++) {
         let date = new Date(2010, 1, 1).getTime();
         date += i * 1000 * 60 * 60 * 24;
-        sessions.push(new session_1.Session(date, 1000));
+        sessions.push(new session_1.Session(date, 1000, projectName));
     }
 }
 function startTimer() {
@@ -87,7 +89,7 @@ function saveSession() {
     let duration = getTime();
     const now = Date.now();
     let durationMS = Date.now() - startTime - totalPausedTime;
-    let newSession = new session_1.Session(startTime, durationMS);
+    let newSession = new session_1.Session(startTime, durationMS, projectName);
     // Buscar si ya existe una sesión para hoy dentro de un rango de 2 horas
     let existingIndex = sessions.findIndex((session) => {
         // Verificar si la diferencia es menor o igual a 2 horas (120 * 60 * 1000 ms)
@@ -119,7 +121,7 @@ function loadSession() {
                 let sessionsArray = JSON.parse(sessionsJson);
                 // Reconstituir los objetos Session con los datos recuperados
                 sessions = sessionsArray.map((sessionData) => {
-                    return new session_1.Session(sessionData.startTimeMS, sessionData.durationMS);
+                    return new session_1.Session(sessionData.startTimeMS, sessionData.durationMS, projectName);
                 });
                 // Verificar si hay una sesión reciente (menos de 2 horas)
                 const now = Date.now();
@@ -232,6 +234,10 @@ function activate(context) {
     const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
         saveSession();
     });
+    if (workspaceFolders) {
+        projectName = workspaceFolders[0].name;
+        console.log(`Nombre del proyecto: ${projectName}`);
+    }
     context.subscriptions.push(saveListener);
     context.subscriptions.push(showPanelDisposable);
 }
@@ -310,6 +316,7 @@ function getWebviewContent(context) {
 				<h2>Recent Sessions:</h2>
 				<table style="margin-top:30px" id="sessionsTable">
 						<tr>
+							<th>Proyect Name</th>
 							<th>Start Time</th>
 							<th>Duration</th>
 						</tr>
@@ -376,8 +383,10 @@ function getWebviewContent(context) {
 								const row = table.insertRow();
 								const cell1 = row.insertCell(0);
 								const cell2 = row.insertCell(1);
-								cell1.textContent = session.startTimeFormated;
-								cell2.textContent = session.durationFormated;
+								const cell3 = row.insertCell(2);
+								cell1.textContent = session.proyectName;
+								cell2.textContent = session.startTimeFormated;
+								cell3.textContent = session.durationFormated;
 								if (count % 2 == 1) {
 									row.style.backgroundColor = "#3d3d3d";	
 								}

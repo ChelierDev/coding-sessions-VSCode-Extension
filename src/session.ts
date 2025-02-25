@@ -5,12 +5,15 @@ export class Session {
     durationMS: number;
     durationFormated: string;
 
-    constructor(startTimeMS: number, durationMS: number) {
+    proyectName: string;
+
+    constructor(startTimeMS: number, durationMS: number, proyectName: string) {
         this.startTimeMS = startTimeMS;
         this.startTimeFormated = formatDate(startTimeMS);
 
         this.durationMS = durationMS;
         this.durationFormated = formatTime(durationMS);
+        this.proyectName = proyectName;
 
     }
 

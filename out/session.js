@@ -6,11 +6,13 @@ class Session {
     startTimeFormated;
     durationMS;
     durationFormated;
-    constructor(startTimeMS, durationMS) {
+    proyectName;
+    constructor(startTimeMS, durationMS, proyectName) {
         this.startTimeMS = startTimeMS;
         this.startTimeFormated = formatDate(startTimeMS);
         this.durationMS = durationMS;
         this.durationFormated = formatTime(durationMS);
+        this.proyectName = proyectName;
     }
 }
 exports.Session = Session;
