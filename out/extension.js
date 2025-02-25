@@ -40,7 +40,7 @@ const path = __importStar(require("path"));
 const session_1 = require("./session");
 const fs = __importStar(require("fs"));
 let storage;
-let projectName = '';
+let currentProjectName = '';
 let sessions = [];
 let panel = undefined;
 const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -53,7 +53,7 @@ function testAlotSave() {
     for (let i = 0; i < 100; i++) {
         let date = new Date(2010, 1, 1).getTime();
         date += i * 1000 * 60 * 60 * 24;
-        sessions.push(new session_1.Session(date, 1000, projectName));
+        sessions.push(new session_1.Session(date, 1000, currentProjectName));
     }
 }
 function startTimer() {
@@ -89,12 +89,12 @@ function saveSession() {
     let duration = getTime();
     const now = Date.now();
     let durationMS = Date.now() - startTime - totalPausedTime;
-    let newSession = new session_1.Session(startTime, durationMS, projectName);
+    let newSession = new session_1.Session(startTime, durationMS, currentProjectName);
     // Buscar si ya existe una sesión para hoy dentro de un rango de 2 horas
     let existingIndex = sessions.findIndex((session) => {
         // Verificar si la diferencia es menor o igual a 2 horas (120 * 60 * 1000 ms)
         let timeSession = session.startTimeMS + session.durationMS;
-        return Math.abs(now - timeSession) <= 120 * 60 * 1000;
+        return Math.abs(now - timeSession) <= 120 * 60 * 1000 && session.projectName === currentProjectName;
     });
     if (existingIndex !== -1) {
         // Si existe, se sobrescribe esa sesión
@@ -121,16 +121,18 @@ function loadSession() {
                 let sessionsArray = JSON.parse(sessionsJson);
                 // Reconstituir los objetos Session con los datos recuperados
                 sessions = sessionsArray.map((sessionData) => {
-                    return new session_1.Session(sessionData.startTimeMS, sessionData.durationMS, projectName);
+                    console.log("El nombre del proyecto es: " + sessionData.projectName);
+                    return new session_1.Session(sessionData.startTimeMS, sessionData.durationMS, sessionData.projectName);
                 });
                 // Verificar si hay una sesión reciente (menos de 2 horas)
                 const now = Date.now();
                 let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000);
-                if (recentSession) {
+                if (recentSession && recentSession.projectName === currentProjectName) {
                     // Si hay una sesión reciente, restablecer el startTime con el de la sesión y recoveredSession a true
                     recoveredSession = true;
                     startTime = recentSession.startTimeMS; // Restablecer el startTime con la sesión encontrada
                     totalPausedTime += now - (recentSession.startTimeMS + recentSession.durationMS); // Calcular el tiempo pausado
+                    currentProjectName = recentSession.projectName;
                 }
             }
             catch (error) {
@@ -183,7 +185,7 @@ function clearSessions() {
     }
 }
 function activate(context) {
-    storage = context.workspaceState;
+    storage = context.globalState;
     // Comando para abrir el panel lateral
     const showPanelDisposable = vscode.commands.registerCommand('extension.showPanel', () => {
         if (!panel) {
@@ -228,16 +230,16 @@ function activate(context) {
             }, null, context.subscriptions);
         }
     });
+    if (workspaceFolders && (currentProjectName === '' || currentProjectName === undefined)) {
+        currentProjectName = workspaceFolders[0].name;
+        console.log(`Nombre del proyecto: ${currentProjectName}`);
+    }
     startTimer();
     loadSession();
     sayHello();
     const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
         saveSession();
     });
-    if (workspaceFolders) {
-        projectName = workspaceFolders[0].name;
-        console.log(`Nombre del proyecto: ${projectName}`);
-    }
     context.subscriptions.push(saveListener);
     context.subscriptions.push(showPanelDisposable);
 }
@@ -316,7 +318,7 @@ function getWebviewContent(context) {
 				<h2>Recent Sessions:</h2>
 				<table style="margin-top:30px" id="sessionsTable">
 						<tr>
-							<th>Proyect Name</th>
+							<th>Project Name</th>
 							<th>Start Time</th>
 							<th>Duration</th>
 						</tr>
@@ -384,7 +386,7 @@ function getWebviewContent(context) {
 								const cell1 = row.insertCell(0);
 								const cell2 = row.insertCell(1);
 								const cell3 = row.insertCell(2);
-								cell1.textContent = session.proyectName;
+								cell1.textContent = session.projectName;
 								cell2.textContent = session.startTimeFormated;
 								cell3.textContent = session.durationFormated;
 								if (count % 2 == 1) {

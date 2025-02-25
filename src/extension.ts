@@ -7,7 +7,7 @@ import * as fs from 'fs';
 
 
 let storage: vscode.Memento;
-let projectName: string = '';
+let currentProjectName: string = '';
 
 let sessions: Session[] = [];
 
@@ -26,7 +26,7 @@ function testAlotSave() {
 	for (let i = 0; i < 100; i++) {
 		let date = new Date(2010, 1, 1).getTime();
 		date += i * 1000 * 60 * 60 * 24;
-		sessions.push(new Session(date, 1000,projectName));
+		sessions.push(new Session(date, 1000,currentProjectName));
 	}
 }
 
@@ -68,7 +68,7 @@ function saveSession() {
     let duration = getTime();
 	const now = Date.now();
 	let durationMS = Date.now() - startTime - totalPausedTime;
-    let newSession = new Session(startTime, durationMS, projectName);
+    let newSession = new Session(startTime, durationMS, currentProjectName);
 
     
 
@@ -76,7 +76,7 @@ function saveSession() {
     let existingIndex = sessions.findIndex((session) => {        
         // Verificar si la diferencia es menor o igual a 2 horas (120 * 60 * 1000 ms)
 		let timeSession = session.startTimeMS + session.durationMS;
-        return Math.abs(now - timeSession) <= 120 * 60 * 1000;
+        return Math.abs(now - timeSession) <= 120 * 60 * 1000 && session.projectName === currentProjectName;
         
     });
 
@@ -110,19 +110,21 @@ function loadSession() {
                 let sessionsArray = JSON.parse(sessionsJson as string);
                 
                 // Reconstituir los objetos Session con los datos recuperados
-                sessions = sessionsArray.map((sessionData: { startTimeMS: number, durationMS: number }) => {
-                    return new Session(sessionData.startTimeMS,sessionData.durationMS, projectName);
+                sessions = sessionsArray.map((sessionData: { startTimeMS: number, durationMS: number, projectName : string }) => {
+					console.log("El nombre del proyecto es: " + sessionData.projectName);
+                    return new Session(sessionData.startTimeMS,sessionData.durationMS, sessionData.projectName);
                 });
 
 				// Verificar si hay una sesión reciente (menos de 2 horas)
 				const now = Date.now();
 				let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000);
 	
-				if (recentSession) {
+				if (recentSession && recentSession.projectName === currentProjectName) {	
 					// Si hay una sesión reciente, restablecer el startTime con el de la sesión y recoveredSession a true
 					recoveredSession = true;
 					startTime = recentSession.startTimeMS;  // Restablecer el startTime con la sesión encontrada
 					totalPausedTime += now -  (recentSession.startTimeMS + recentSession.durationMS); // Calcular el tiempo pausado
+					currentProjectName = recentSession.projectName;
 				} 
 
             } catch (error) {
@@ -185,8 +187,7 @@ function clearSessions() {
 
 export function activate(context: vscode.ExtensionContext) {
 
-	storage = context.workspaceState;
-
+	storage = context.globalState;
 
 	// Comando para abrir el panel lateral
 	const showPanelDisposable = vscode.commands.registerCommand('extension.showPanel', () => {
@@ -252,6 +253,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 		}
 	});
+
+	if (workspaceFolders && (currentProjectName === '' || currentProjectName === undefined)) {
+		currentProjectName = workspaceFolders[0].name;
+		console.log(`Nombre del proyecto: ${currentProjectName}`);
+	}
+
 	startTimer();
 	loadSession();
 	sayHello();
@@ -260,10 +267,7 @@ export function activate(context: vscode.ExtensionContext) {
 		saveSession();
 	});
 	
-	if (workspaceFolders) {
-		projectName = workspaceFolders[0].name;
-		console.log(`Nombre del proyecto: ${projectName}`);
-	}
+
 
 
 	context.subscriptions.push(saveListener);
@@ -347,7 +351,7 @@ function getWebviewContent(context: vscode.ExtensionContext) {
 				<h2>Recent Sessions:</h2>
 				<table style="margin-top:30px" id="sessionsTable">
 						<tr>
-							<th>Proyect Name</th>
+							<th>Project Name</th>
 							<th>Start Time</th>
 							<th>Duration</th>
 						</tr>
@@ -415,7 +419,7 @@ function getWebviewContent(context: vscode.ExtensionContext) {
 								const cell1 = row.insertCell(0);
 								const cell2 = row.insertCell(1);
 								const cell3 = row.insertCell(2);
-								cell1.textContent = session.proyectName;
+								cell1.textContent = session.projectName;
 								cell2.textContent = session.startTimeFormated;
 								cell3.textContent = session.durationFormated;
 								if (count % 2 == 1) {
