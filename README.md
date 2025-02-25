@@ -5,7 +5,7 @@ This extension allows you to track and export your coding sessions in **Visual S
 ## Features
 
 - **Track sessions**: Automatically tracks your coding sessions, including start time and duration.
-- **Save sessions**: The extension saves sessions when you save the project (Ctrl + S).
+- **Save sessions**: The extension saves sessions when you save the project (Ctrl + S) or when you pause the session.
 - **Export to CSV**: Easily export your sessions to a CSV file with a simple click.
 
 ## Commands
