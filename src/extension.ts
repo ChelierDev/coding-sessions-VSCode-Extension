@@ -31,15 +31,14 @@ function testAlotSave() {
 }
 
 function startTimer() {
-	//panel!.webview.postMessage({ command: 'startTimerResponse', paused: paused });
 	if (paused) {
 		paused = false;
 		totalPausedTime += Date.now() - pauseStartTime;
-		
 	}
 	else {
 		paused = true;
 		pauseStartTime = Date.now();
+		saveSession();
 	}
 	}
 
@@ -117,9 +116,10 @@ function loadSession() {
 
 				// Verificar si hay una sesión reciente (menos de 2 horas)
 				const now = Date.now();
-				let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000);
+				let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000
+				 && session.projectName === currentProjectName);
 	
-				if (recentSession && recentSession.projectName === currentProjectName) {	
+				if (recentSession) {	
 					// Si hay una sesión reciente, restablecer el startTime con el de la sesión y recoveredSession a true
 					recoveredSession = true;
 					startTime = recentSession.startTimeMS;  // Restablecer el startTime con la sesión encontrada
@@ -260,8 +260,8 @@ export function activate(context: vscode.ExtensionContext) {
 		console.log(`Nombre del proyecto: ${currentProjectName}`);
 	}
 
-	startTimer();
 	loadSession();
+	startTimer();
 	sayHello();
 
 	const saveListener = vscode.workspace.onDidSaveTextDocument((document) => { // cuando se guarda un archivo, guardamos la sesión

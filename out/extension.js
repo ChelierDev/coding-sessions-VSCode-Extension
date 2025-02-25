@@ -57,7 +57,6 @@ function testAlotSave() {
     }
 }
 function startTimer() {
-    //panel!.webview.postMessage({ command: 'startTimerResponse', paused: paused });
     if (paused) {
         paused = false;
         totalPausedTime += Date.now() - pauseStartTime;
@@ -65,6 +64,7 @@ function startTimer() {
     else {
         paused = true;
         pauseStartTime = Date.now();
+        saveSession();
     }
 }
 function getTime() {
@@ -126,8 +126,9 @@ function loadSession() {
                 });
                 // Verificar si hay una sesión reciente (menos de 2 horas)
                 const now = Date.now();
-                let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000);
-                if (recentSession && recentSession.projectName === currentProjectName) {
+                let recentSession = sessions.find(session => Math.abs(now - (session.startTimeMS + session.durationMS)) <= 120 * 60 * 1000
+                    && session.projectName === currentProjectName);
+                if (recentSession) {
                     // Si hay una sesión reciente, restablecer el startTime con el de la sesión y recoveredSession a true
                     recoveredSession = true;
                     startTime = recentSession.startTimeMS; // Restablecer el startTime con la sesión encontrada
@@ -235,8 +236,8 @@ function activate(context) {
         currentProjectName = workspaceFolders[0].name;
         console.log(`Nombre del proyecto: ${currentProjectName}`);
     }
-    startTimer();
     loadSession();
+    startTimer();
     sayHello();
     const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
         saveSession();
