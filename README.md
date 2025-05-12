@@ -10,6 +10,8 @@ This extension allows you to track and export your coding sessions in **Visual S
 
 ## Commands
 
+You can access extension commands via the Command Palette (default shortcut: Ctrl+Shift+P or Cmd+Shift+P on macOS), then search for
+
 - **Coding Sessions: Show Panel**: Opens the session tracking panel to view the active and past sessions.
 
 ## Contact
