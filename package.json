@@ -3,7 +3,7 @@
   "displayName": "Coding Sessions",
   "description": "A simple extension to track your work hours in VSCode.",
   "version": "0.0.1",
-  "publisher": "Chelier Software",
+  "publisher": "ChelierSoftware",
   "icon":"images/icon.jpeg",
   "engines": {
     "vscode": "^1.97.0"
@@ -43,10 +43,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nachelier/coding-sessions-VSCode-Extension"
+    "url": "https://github.com/ChelierDev/coding-sessions-VSCode-Extension"
   },
   "bugs": {
-  "url": "https://github.com/Nachelier/coding-sessions-VSCode-Extension/issues"
+  "url": "https://github.com/ChelierDev/coding-sessions-VSCode-Extension/issues"
 }
 
 }

@@ -18,4 +18,4 @@ You can access extension commands via the Command Palette (default shortcut: Ctr
 
 If you encounter any issues or have suggestions for improvement, feel free to reach out:
 
-- **GitHub Issues**: [Report an issue](https://github.com/Nachelier/coding-sessions-VSCode-Extension/issues)
+- **GitHub Issues**: [Report an issue](https://github.com/ChelierDev/coding-sessions-VSCode-Extension/issues)
